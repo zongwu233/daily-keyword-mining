@@ -1,0 +1,28 @@
+{
+  "_comment": "Block 1 trend aggregator config. Copy to config.json and tweak.",
+  "_comment_2": "All sources are zero-auth (Wikipedia + GitHub + Google Trends RSS).",
+  "_comment_3": "Google Trends RSS endpoint: https://trends.google.com/trending/rss?geo=US",
+
+  "top_n": {
+    "wikipedia": 30,
+    "github": 25,
+    "google_trends": 20
+  },
+
+  "wikipedia": {
+    "days_back": 1
+  },
+
+  "github": {
+    "queries": [
+      {"since": "daily", "language": ""},
+      {"since": "weekly", "language": "python"},
+      {"since": "weekly", "language": "typescript"}
+    ]
+  },
+
+  "google_trends_rss": {
+    "enabled": true,
+    "geos": ["US", "JP", "GB", "DE", "FR", "IT", "ES"]
+  }
+}
