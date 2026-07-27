@@ -1,0 +1,26 @@
+{
+  "_comment": "Block 4 aggregator config. Copy this file to config.json and fill in tokens.",
+  "_comment_2": "Product Hunt token: https://www.producthunt.com/v2/oauth/applications (create app, get Developer Token)",
+  "_comment_3": "YouTube API key: https://console.cloud.google.com/apis/credentials (enable YouTube Data API v3, create API key)",
+
+  "top_n": {
+    "hackernews": 20,
+    "producthunt": 10,
+    "youtube": 15,
+    "steam": 15
+  },
+
+  "reddit": {
+    "subreddits": ["all", "InternetIsBeautiful", "SomebodyMakeThis"],
+    "top_n_per_sub": 20
+  },
+
+  "producthunt": {
+    "token": ""
+  },
+
+  "youtube": {
+    "api_key": "",
+    "region_code": "US"
+  }
+}
