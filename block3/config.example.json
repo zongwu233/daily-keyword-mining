@@ -1,0 +1,13 @@
+{
+  "_comment": "Block 3 newly registered domains scanner config. Copy to config.json and tweak.",
+
+  "top_n": {
+    "new_domains": 200
+  },
+
+  "new_domains": {
+    "max_days": 1,
+    "sample_limit": 70000,
+    "min_score": 55
+  }
+}
