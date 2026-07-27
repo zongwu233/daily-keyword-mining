@@ -1,0 +1,26 @@
+# secrets / local config
+block1/config.json
+block3/config.json
+block4/config.json
+.env
+.env.local
+
+# generated outputs
+trends/
+new_domains/
+digests/
+_generated/
+_site/
+*.log
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.python-version
+
+# os
+.DS_Store
+Thumbs.db
