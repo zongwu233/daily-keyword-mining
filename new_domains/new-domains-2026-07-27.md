@@ -1,6 +1,6 @@
 # New Domain Research Report — 2026-07-27
 
-> Generated at: 2026-07-27T11:01:27Z  ·  [OK] New Domains (WhoisDS NRD): 200 items
+> Generated at: 2026-07-27T11:11:46Z  ·  [OK] New Domains (WhoisDS NRD): 200 items
 
 ## New Domain Candidates
 
