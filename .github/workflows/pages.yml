@@ -33,10 +33,24 @@ jobs:
         run: python -m pip install -r requirements.txt
 
       - name: Prepare local configs
+        env:
+          PRODUCTHUNT_TOKEN: ${{ secrets.PRODUCTHUNT_TOKEN }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: |
           cp block1/config.example.json block1/config.json
           cp block3/config.example.json block3/config.json
           cp block4/config.example.json block4/config.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("block4/config.json")
+          config = json.loads(path.read_text(encoding="utf-8"))
+          config["producthunt"]["token"] = os.environ.get("PRODUCTHUNT_TOKEN", "")
+          config["youtube"]["api_key"] = os.environ.get("YOUTUBE_API_KEY", "")
+          path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+          PY
 
       - name: Prepare output directories
         run: |

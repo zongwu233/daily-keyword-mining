@@ -43,4 +43,11 @@ The workflow at `.github/workflows/pages.yml` runs the collectors, stages `_site
 
 Each daily run creates date-stamped report pages, for example `trends/trends-YYYY-MM-DD.html`, `new_domains/new-domains-YYYY-MM-DD.html`, and `digests/digest-YYYY-MM-DD.html`. Historical pages are preserved on the `pages-history` branch, while `index.html` and each section index are regenerated to link to the latest and historical reports.
 
+For Product Hunt and YouTube collection in GitHub Actions, add repository secrets at **Settings -> Secrets and variables -> Actions**:
+
+- `PRODUCTHUNT_TOKEN`: Product Hunt developer token.
+- `YOUTUBE_API_KEY`: YouTube Data API v3 key.
+
+If either secret is missing, that source is skipped and the report records the missing credential.
+
 After pushing this repository to GitHub, enable **Settings -> Pages -> GitHub Actions**.
