@@ -41,4 +41,6 @@ python -m block4.main --out _generated/digests
 
 The workflow at `.github/workflows/pages.yml` runs the collectors, stages `_site/`, and deploys the static HTML reports with GitHub Pages.
 
+Each daily run creates date-stamped report pages, for example `trends/trends-YYYY-MM-DD.html`, `new_domains/new-domains-YYYY-MM-DD.html`, and `digests/digest-YYYY-MM-DD.html`. Historical pages are preserved on the `pages-history` branch, while `index.html` and each section index are regenerated to link to the latest and historical reports.
+
 After pushing this repository to GitHub, enable **Settings -> Pages -> GitHub Actions**.
