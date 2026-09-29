@@ -15,6 +15,7 @@ Automates daily keyword research collection and publishes generated HTML reports
 python -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements.txt
+npm ci
 cp block1/config.example.json block1/config.json
 cp block3/config.example.json block3/config.json
 cp block4/config.example.json block4/config.json
@@ -50,5 +51,9 @@ For Product Hunt and YouTube collection in GitHub Actions, add repository secret
 - `TYPESAFE_API_KEY`: TypeSafe/JEV API key for Google Trends screening.
 
 If a source's secret is missing, that source is skipped where credentials are required. Without `TYPESAFE_API_KEY`, Google Trends terms remain included and marked unscreened. With the key configured, JEV separates durable research candidates from transient or uncertain topics and displays the decision and confidence.
+
+Block 1 uses the open-source `google-trends-now` client (Node.js 22) to read Google Trending Now, requesting the top 30 per configured region over the last 48 hours, sorted by volume. It is an unofficial client for Google's undocumented page-data path. The workflow validates its JSON status and falls back to Google's 10-item RSS feed if the client fails or returns no results. This source can change or become unavailable; failed collection is visible in the workflow log.
+
+Run the collector locally with `node bin/google-trends-now.mjs trending --geo US --hours 48 --sort volume --limit 30 --format json`. The Node process in this workstation uses a direct fetch and timed out against Google; curl succeeded through the workstation proxy. GitHub Actions uses Node 22 on its hosted runner, so its live availability still needs to be confirmed by a workflow run.
 
 After pushing this repository to GitHub, enable **Settings -> Pages -> GitHub Actions**.

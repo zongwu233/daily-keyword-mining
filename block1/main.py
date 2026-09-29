@@ -7,12 +7,14 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
+from common.models import FetchResult
 from block1.renderer import render_html, render_markdown
 from block1.sources import (
-    fetch_github_trending,
     fetch_and_screen_google_trends,
+    fetch_google_trends_json,
+    fetch_github_trending,
     fetch_wikipedia_top,
+    screen_google_trends,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -28,6 +30,11 @@ def load_config(path: Path) -> dict[str, Any]:
         )
     return json.loads(path.read_text(encoding="utf-8"))
 
+def _screen_result(raw, geo: str, api_key: str):
+    kept, excluded, error = screen_google_trends(raw.items, geo, api_key)
+    research = FetchResult(f"Google Trends ({geo}) — research candidates", True, kept, fetched_at=raw.fetched_at)
+    filtered = FetchResult(f"Google Trends ({geo}) — filtered out", True, excluded, fetched_at=raw.fetched_at) if excluded else None
+    return research, filtered, error
 
 def run_all(cfg: dict[str, Any]) -> list:
     top = cfg.get("top_n", {})
@@ -55,15 +62,27 @@ def run_all(cfg: dict[str, Any]) -> list:
     if gt_cfg.get("enabled", True):
         geos = gt_cfg.get("geos", ["US"])
         api_key = os.environ.get("TYPESAFE_API_KEY", "")
+        source = gt_cfg.get("source", "rss")
+        trending_dir = ROOT / gt_cfg.get("trending_now_dir", "_generated/trending_now")
         for idx, geo in enumerate(geos):
             if idx > 0:
                 import time as _time
                 _time.sleep(3)
-            research, filtered, screening_error = fetch_and_screen_google_trends(
-                geo=geo,
-                top_n=top.get("google_trends", 20),
-                api_key=api_key,
-            )
+            raw = None
+            if source == "trending_now":
+                candidate_path = trending_dir / f"{geo}.json"
+                if candidate_path.exists():
+                    raw = fetch_google_trends_json(candidate_path, geo, gt_cfg.get("top_n", 30))
+            if raw is None or not raw.ok or not raw.items:
+                if raw is not None and not raw.ok:
+                    print(f"  [GT] Trending Now unavailable for {geo}; falling back to RSS", flush=True)
+                research, filtered, screening_error = fetch_and_screen_google_trends(
+                    geo=geo,
+                    top_n=top.get("google_trends", 10),
+                    api_key=api_key,
+                )
+            else:
+                research, filtered, screening_error = _screen_result(raw, geo, api_key)
             results.append(research)
             if filtered:
                 results.append(filtered)

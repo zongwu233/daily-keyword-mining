@@ -29,8 +29,12 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install dependencies
-        run: python -m pip install -r requirements.txt
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install JavaScript dependencies
+        run: npm install --no-audit --no-fund
 
       - name: Prepare local configs
         env:
@@ -65,6 +69,18 @@ jobs:
             cp -R _history/. _site/
             rm -rf _site/.git
           fi
+
+      - name: Collect Google Trending Now candidates
+        run: |
+          mkdir -p _generated/trending_now
+          for geo in US JP GB DE FR IT ES; do
+            if node node_modules/google-trends-now/bin/google-trends-now.mjs trending --geo "$geo" --hours 48 --sort volume --limit 30 --format json > "_generated/trending_now/$geo.json"; then
+              echo "Trending Now collected for $geo"
+            else
+              echo "Trending Now failed for $geo; Block 1 will use RSS fallback"
+              rm -f "_generated/trending_now/$geo.json"
+            fi
+          done
 
       - name: Generate reports
         env:

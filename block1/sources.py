@@ -1,14 +1,15 @@
 from __future__ import annotations
+import json
 import os
 import re
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import requests
 import feedparser
 
 from common.models import FetchResult, Item
-
 
 UA = "Mozilla/5.0 (compatible; niche-research-block1/1.0)"
 TIMEOUT = 15
@@ -105,6 +106,44 @@ def fetch_google_trends_rss(
     print(f"FAIL", flush=True)
     return FetchResult(source_label, False, error=repr(last_err), fetched_at=_ts())
 
+
+def fetch_google_trends_json(path: Path, geo: str, top_n: int) -> FetchResult:
+    source_label = f"Google Trends ({geo})"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("Trending Now response must be an object")
+        if (
+            payload.get("source") != "google_trending_now"
+            or payload.get("fetch_status") != "success"
+            or not isinstance(payload.get("items"), list)
+            or not payload["items"]
+        ):
+            raise ValueError(payload.get("error") or "Trending Now returned no successful items")
+        items: list[Item] = []
+        for index, entry in enumerate(payload.get("items", [])[:top_n], 1):
+            title = str(entry.get("normalized_query") or entry.get("query") or "").strip()
+            if not title:
+                continue
+            items.append(
+                Item(
+                    source=source_label,
+                    title=title,
+                    url=str(entry.get("explore_url") or f"https://trends.google.com/trends/explore?q={title.replace(' ', '+')}&geo={geo}"),
+                    extra={
+                        "rank": entry.get("position", index),
+                        "approx_traffic": entry.get("search_volume_label"),
+                        "increase_percentage": entry.get("increase_percentage"),
+                        "active": entry.get("active"),
+                        "categories": entry.get("categories", []),
+                        "trend_source": payload.get("source", "google_trending_now"),
+                        "description": entry.get("search_volume_label"),
+                    },
+                )
+            )
+        return FetchResult(source_label, True, items, fetched_at=_ts())
+    except (OSError, TypeError, ValueError, AttributeError) as exc:
+        return FetchResult(source_label, False, error=repr(exc), fetched_at=_ts())
 
 def _get(url: str, **kw) -> requests.Response:
     headers = kw.pop("headers", {}) | {"User-Agent": UA}
