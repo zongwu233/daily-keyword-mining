@@ -6,7 +6,7 @@ from html import escape
 from common.models import FetchResult, Item
 
 SOURCE_ORDER = [
-    "Google Trends",
+    "Google Trends (",
     "GitHub Trending (daily)",
     "GitHub Trending (weekly)",
     "GitHub Trending (monthly)",
@@ -80,6 +80,11 @@ def render_markdown(results: list[FetchResult], iso_str: str) -> str:
                     period = it.extra.get("stars_period", "today")
                     score_part = f" · stars {period}={_fmt_num(it.score)}"
             desc = it.extra.get("description") or ""
+            decision = it.extra.get("jev_decision")
+            confidence = it.extra.get("jev_confidence")
+            if decision:
+                confidence_text = f" ({confidence:.0%} confidence)" if isinstance(confidence, (int, float)) else ""
+                desc = " · ".join(part for part in (f"JEV: {decision}{confidence_text}", desc) if part)
             lang_name = it.extra.get("language")
             lang_part = f" [{lang_name}]" if lang_name else ""
             lines.append(f"{i}. **{it.title}**{lang_part}{score_part}")
@@ -204,6 +209,11 @@ def render_html(results: list[FetchResult], iso_str: str) -> str:
                     elif src.startswith("GitHub Trending"):
                         period = it.extra.get("stars_period", "today")
                         meta_bits.append(f"stars {period} {_fmt_num(it.score)}")
+                decision = it.extra.get("jev_decision")
+                confidence = it.extra.get("jev_confidence")
+                if decision:
+                    confidence_text = f" ({confidence:.0%} confidence)" if isinstance(confidence, (int, float)) else ""
+                    meta_bits.append(f"JEV: {decision}{confidence_text}")
                 meta_html = (
                     f'<span class="item-meta">{" · ".join(meta_bits)}</span>'
                     if meta_bits

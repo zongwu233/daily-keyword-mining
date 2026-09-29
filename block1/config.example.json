@@ -1,7 +1,6 @@
 {
-  "_comment": "Block 1 trend aggregator config. Copy to config.json and tweak.",
-  "_comment_2": "All sources are zero-auth (Wikipedia + GitHub + Google Trends RSS).",
-  "_comment_3": "Google Trends RSS endpoint: https://trends.google.com/trending/rss?geo=US",
+  "_comment": "Block 1 trend aggregator config. Google Trends terms are screened with JEV when TYPESAFE_API_KEY is provided.",
+  "_comment_2": "Google Trends RSS endpoint: https://trends.google.com/trending/rss?geo=US",
 
   "top_n": {
     "wikipedia": 30,

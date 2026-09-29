@@ -67,6 +67,8 @@ jobs:
           fi
 
       - name: Generate reports
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
         run: |
           python -m block1.main --out _generated/trends
           python -m block3.main --out _generated/new_domains

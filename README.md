@@ -47,7 +47,8 @@ For Product Hunt and YouTube collection in GitHub Actions, add repository secret
 
 - `PRODUCTHUNT_TOKEN`: Product Hunt developer token.
 - `YOUTUBE_API_KEY`: YouTube Data API v3 key.
+- `TYPESAFE_API_KEY`: TypeSafe/JEV API key for Google Trends screening.
 
-If either secret is missing, that source is skipped and the report records the missing credential.
+If a source's secret is missing, that source is skipped where credentials are required. Without `TYPESAFE_API_KEY`, Google Trends terms remain included and marked unscreened. With the key configured, JEV separates durable research candidates from transient or uncertain topics and displays the decision and confidence.
 
 After pushing this repository to GitHub, enable **Settings -> Pages -> GitHub Actions**.

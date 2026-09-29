@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,7 +11,7 @@ from typing import Any
 from block1.renderer import render_html, render_markdown
 from block1.sources import (
     fetch_github_trending,
-    fetch_google_trends_rss,
+    fetch_and_screen_google_trends,
     fetch_wikipedia_top,
 )
 
@@ -53,12 +54,21 @@ def run_all(cfg: dict[str, Any]) -> list:
     gt_cfg = cfg.get("google_trends_rss", {})
     if gt_cfg.get("enabled", True):
         geos = gt_cfg.get("geos", ["US"])
+        api_key = os.environ.get("TYPESAFE_API_KEY", "")
         for idx, geo in enumerate(geos):
             if idx > 0:
                 import time as _time
                 _time.sleep(3)
-            results.append(fetch_google_trends_rss(geo=geo, top_n=top.get("google_trends", 20)))
-
+            research, filtered, screening_error = fetch_and_screen_google_trends(
+                geo=geo,
+                top_n=top.get("google_trends", 20),
+                api_key=api_key,
+            )
+            results.append(research)
+            if filtered:
+                results.append(filtered)
+            if screening_error:
+                print(f"  [JEV] {screening_error}", flush=True)
     return results
 
 

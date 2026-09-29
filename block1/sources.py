@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import os
 import re
 import time
 from datetime import datetime, timedelta, timezone
@@ -8,6 +8,7 @@ import requests
 import feedparser
 
 from common.models import FetchResult, Item
+
 
 UA = "Mozilla/5.0 (compatible; niche-research-block1/1.0)"
 TIMEOUT = 15
@@ -203,3 +204,76 @@ def fetch_github_trending(
         return FetchResult(
             source_label, False, error=repr(e), fetched_at=_ts()
         )
+
+
+JEV_ENDPOINT = "https://api.typesafe.ai/v1/systemone"
+JEV_TIMEOUT = 30
+JEV_QUESTION = {
+    "type": "choice",
+    "instructions": "Classify the candidate object in the state for durable keyword research. Choose 'research' only when it plausibly signals ongoing problem, product, service, tool, or informational niche demand beyond the current news cycle. Choose 'transient' for short-lived attention that is not itself a durable niche opportunity. Choose 'uncertain' when context is insufficient or the term could be either; do not infer a business opportunity from a person or event name alone.",
+    "criteria": {
+        "research": "A plausibly durable topic, product/service category, recurring problem, or informational need suitable for manual keyword opportunity research.",
+        "transient": "Primarily a short-lived spike: celebrity/person gossip or news; film/TV/music/game release or fandom; sports match/tournament/athlete result; breaking news, political event/election, crime or disaster; holiday/anniversary/seasonal event; recurring annual shopping or tax/payday trend; weather alert; lottery/draw result; viral meme/challenge; one-off product launch or press event.",
+        "uncertain": "Not enough evidence to distinguish durable demand from a transient spike, or the term is ambiguous."
+    }
+}
+
+
+def screen_google_trends(items: list[Item], geo: str, api_key: str) -> tuple[list[Item], list[Item], str | None]:
+    """Return research candidates, rejected/uncertain terms, and a failure message."""
+    if not items:
+        return [], [], None
+    if not api_key:
+        return items, [], "TYPESAFE_API_KEY is not configured; showing unscreened trends"
+
+    kept: list[Item] = []
+    excluded: list[Item] = []
+    try:
+        for index, item in enumerate(items):
+            state = {
+                "region": geo,
+                "candidate": {
+                    "term": item.title,
+                    "news_title": item.extra.get("news_title"),
+                    "news_snippet": item.extra.get("news_snippet"),
+                },
+            }
+            response = requests.post(
+                JEV_ENDPOINT,
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={
+                    "state": state,
+                    "model": "jev-latest",
+                    "questions": {"screen": JEV_QUESTION},
+                },
+                timeout=JEV_TIMEOUT,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            answers = payload.get("answers", {}) if isinstance(payload, dict) else {}
+            answer = answers.get("screen", {}) if isinstance(answers, dict) else {}
+            decision = answer.get("choice") if isinstance(answer, dict) else None
+            if decision not in {"research", "transient", "uncertain"}:
+                raise ValueError("JEV response is missing a valid classification")
+            item.extra["jev_decision"] = decision
+            item.extra["jev_confidence"] = answer.get("confidence")
+            if decision == "research":
+                kept.append(item)
+            else:
+                excluded.append(item)
+    except (requests.RequestException, ValueError, TypeError, AttributeError) as exc:
+        return items, [], f"JEV screening failed; showing unscreened trends: {exc}"
+    return kept, excluded, None
+
+
+def fetch_and_screen_google_trends(geo: str, top_n: int, api_key: str) -> tuple[FetchResult, FetchResult | None, str | None]:
+    raw = fetch_google_trends_rss(geo=geo, top_n=top_n)
+    if not raw.ok:
+        return raw, None, None
+    kept, excluded, error = screen_google_trends(raw.items, geo, api_key)
+    if error:
+        raw.source = f"Google Trends ({geo}) — screening unavailable"
+        return raw, None, error
+    research = FetchResult(f"Google Trends ({geo}) — research candidates", True, kept, fetched_at=raw.fetched_at)
+    filtered = FetchResult(f"Google Trends ({geo}) — filtered out", True, excluded, fetched_at=raw.fetched_at) if excluded else None
+    return research, filtered, None
