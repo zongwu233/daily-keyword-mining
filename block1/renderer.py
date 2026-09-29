@@ -125,7 +125,17 @@ h2 {
 .item:last-child { border-bottom: none; }
 .item-title { font-weight: 600; color: #1f2328; }
 .item-meta { font-size: 12px; color: #6c757d; margin-left: 8px; white-space: nowrap; }
-.item-desc { font-size: 12px; color: #555; margin-top: 2px; }
+.item-meta.jev-research,
+.item-meta.jev-transient,
+.item-meta.jev-uncertain {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+}
+.item-meta.jev-research { background: #d1e7dd; color: #0f5132; }
+.item-meta.jev-transient { background: #e2e3e5; color: #41464b; }
+.item-meta.jev-uncertain { background: #fff3cd; color: #664d03; }
 .item-url {
     display: block;
     font-size: 12px;
@@ -214,8 +224,13 @@ def render_html(results: list[FetchResult], iso_str: str) -> str:
                 if decision:
                     confidence_text = f" ({confidence:.0%} confidence)" if isinstance(confidence, (int, float)) else ""
                     meta_bits.append(f"JEV: {decision}{confidence_text}")
+                meta_class = {
+                    "research": " jev-research",
+                    "transient": " jev-transient",
+                    "uncertain": " jev-uncertain",
+                }.get(decision, "")
                 meta_html = (
-                    f'<span class="item-meta">{" · ".join(meta_bits)}</span>'
+                    f'<span class="item-meta{meta_class}">{" · ".join(meta_bits)}</span>'
                     if meta_bits
                     else ""
                 )
